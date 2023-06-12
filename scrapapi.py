@@ -1,0 +1,155 @@
+from flask import Flask, jsonify, abort, request
+import multiprocessing
+import requests
+from bs4 import BeautifulSoup
+import time
+from concurrent.futures import ThreadPoolExecutor
+from flask_cors import CORS, cross_origin
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+app = Flask(__name__)
+CORS(app)
+
+delay = [0, 1, 2, 4]
+maxCallLimit = 4
+
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Content-type': 'application/json',
+    'Accept': 'application/json'
+}
+
+
+# Define another route that accepts parameters
+@app.route('/scrap', methods=['POST'])
+def get_responce():
+    data = request.get_json()
+    urlList = data.get('urls')
+
+    data = {}
+
+    num_cores = multiprocessing.cpu_count()
+    max_workers = num_cores + 1
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit API requests asynchronously
+        futures = [executor.submit(getResponse, obj) for obj in urlList]
+
+        # Wait for all the API requests to complete
+        results = [future.result() for future in futures]
+
+    return jsonify(results)
+
+
+def getResponse(obj):
+    url = obj['url']
+    id = obj['id']
+
+    data = {
+        'title' : '',
+        'images' : [],
+        'description' : ''
+    }
+
+    fetchData(url, data)
+
+    return {
+        'url': url,
+        'id': id,
+        'response': data
+    }
+
+
+def fetchData(url, data,  callCount = 0):
+
+    global  maxCallLimit, headers
+
+    response = requests.get(url, headers = headers)
+
+    if(response.status_code == 200):
+        getOgPrefixMetaTags(response, data)
+
+        if(data.get('title') == ''):
+            # abort(400, "Product Title is Empty")
+            return data
+
+        getDataFromGoogleApi(data.get('title'), data)
+
+        return data
+
+    elif(response.status_code == 500):
+        if (callCount > maxCallLimit):
+            # abort(400, "No response from Clint's server")
+            return {"error": "No response from Clint's server"}
+
+        time.sleep(delay[callCount])
+        return fetchData(url, data, callCount + 1)
+
+    # abort(400, "No response from Clint's server")
+    return {"error": f"No response from Clint's server {response}"}
+def getOgPrefixMetaTags(response, data):
+
+    html_content = response.text
+
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Extract meta tags from the parsed HTML
+    meta_tags = soup.find_all('meta')
+
+    for meta_tag in meta_tags:
+        for attr_value in meta_tag.attrs.values():
+            if isinstance(attr_value, str) and 'og:' in attr_value:
+                if('title' in attr_value):
+                    data['title'] = meta_tag.get('content')
+                elif('image' in attr_value):
+                    data['images'].append(meta_tag.get('content'))
+                elif('description' in attr_value):
+                    data['description'] = meta_tag.get('content')
+
+    if(data.get('title') == ''):
+        data['title'] = soup.title.string if soup.title else ''
+
+    return
+
+def getDataFromGoogleApi(productTitle, data, callCount = 0):
+
+    global maxCallLimit
+
+    if (callCount >= maxCallLimit):
+        # abort(400, "No response from CSE")
+        return []
+
+    api_key = "AIzaSyBU3CCsLdjPTPG0FLqjh7SdhIogmAP9Mls"
+    cse_id = "1123473d2f0334801"
+
+    # api_key = "AIzaSyD4GOZSGBQlg0xzBl9qQkpNdBVkHfohLDA"
+    # cse_id = "2070d058d8eee4de0"
+
+    url = f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={productTitle}&searchType=image&num=10"
+
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        return extractDataFromCSEResponse(response.json(), data)
+    else:
+        time.sleep(delay[callCount])
+        return getDataFromGoogleApi(url, data, callCount + 1)
+
+
+def extractDataFromCSEResponse(response, data):
+    images = []
+
+    for item in response.get('items'):
+        if(item.get('link')):
+            images.append(item.get('link'))
+
+    data['images'].extend(images)
+
+    return
+
+
+# Run the Flask application
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True, threaded=True, port=5500)
