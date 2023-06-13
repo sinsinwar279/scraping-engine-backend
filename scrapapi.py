@@ -5,19 +5,32 @@ from bs4 import BeautifulSoup
 import time
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import CORS, cross_origin
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
+import logging
 app = Flask(__name__)
 CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type, authorization, access-control-allow-origin, Origin, X-Auth-Token,'
+app.config["DEBUG"] = True
+
 
 delay = [0, 1, 2, 4]
 maxCallLimit = 4
 
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Content-type': 'application/json',
-    'Accept': 'application/json'
+  
+               
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0",
+        #   "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+          "Accept-Encoding": "gzip, deflate",
+          "Connection": "keep-alive",
+          "Upgrade-Insecure-Requests": "1",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "none",
+          "Sec-Fetch-User": "?1",
+          "Cache-Control": "max-age=0",
+          'X-Requested-With': 'XMLHttpRequest',
 }
 
 
@@ -91,17 +104,21 @@ def fetchData(url, data,  callCount = 0):
 def getOgPrefixMetaTags(response, data):
 
     html_content = response.text
+   
 
     # Parse the HTML content using BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
-
+    app.logger.info(soup)
+    # json = soup.find('script', type='application/ld+json')
     # Extract meta tags from the parsed HTML
     meta_tags = soup.find_all('meta')
-
+    app.logger.info("Called")
     for meta_tag in meta_tags:
         for attr_value in meta_tag.attrs.values():
             if isinstance(attr_value, str) and 'og:' in attr_value:
+                app.logger.info(attr_value)
                 if('title' in attr_value):
+                    app.logger.info(meta_tag.get('content'))
                     data['title'] = meta_tag.get('content')
                 elif('image' in attr_value):
                     data['images'].append(meta_tag.get('content'))
