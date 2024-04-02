@@ -100,7 +100,13 @@ def fetchData(url, data, callCount=0):
 
         return data
 
-    elif (response.status_code == 500):
+    else:
+        if 'westelm' in url:
+            arr = url.split('/')
+            for i in range(0, len(arr)):
+                if arr[i] == 'products' and i + 1 < len(arr):
+                    getDataFromGoogleApi(arr[i + 1] + ' westelm', data)
+            return
         if (callCount > maxCallLimit):
             # abort(400, "No response from Clint's server")
             return {"error": "No response from Clint's server"}
@@ -166,6 +172,9 @@ def getDataFromGoogleApi(productTitle, data, callCount=0):
 
 def extractDataFromCSEResponse(response, data):
     images = []
+
+    if not 'items' in response:
+        return
 
     for item in response.get('items'):
         link = item.get('link')
