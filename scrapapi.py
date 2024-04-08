@@ -89,6 +89,14 @@ def fetchData(url, data, callCount=0):
         getOgPrefixMetaTags(response, data)
 
         if (data.get('title') == ''):
+            if 'westelm' in url:
+                arr = url.split('/')
+                for i in range(0, len(arr)):
+                    if arr[i] == 'products' and i + 1 < len(arr):
+                        data['title'] = arr[i + 1].replace("-", " ").rsplit(' ', 1)[0]
+                        print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
+                        getDataFromGoogleApi(data.get('title'), data)
+                return
             if (callCount > maxCallLimit):
                 # abort(400, "No response from Clint's server")
                 return {"error": "No response from Clint's server"}
@@ -105,7 +113,9 @@ def fetchData(url, data, callCount=0):
             arr = url.split('/')
             for i in range(0, len(arr)):
                 if arr[i] == 'products' and i + 1 < len(arr):
-                    getDataFromGoogleApi(arr[i + 1] + ' westelm', data)
+                    data['title'] = arr[i + 1].replace("-", " ").rsplit(' ', 1)[0]
+                    print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
+                    getDataFromGoogleApi(data.get('title'), data)
             return
         if (callCount > maxCallLimit):
             # abort(400, "No response from Clint's server")
