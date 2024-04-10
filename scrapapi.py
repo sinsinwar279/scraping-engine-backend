@@ -87,6 +87,8 @@ def capitalize_first_letter(word):
 
 def titleCaseProductTitle(sentence):
     # Split the sentence into individual words
+    if not sentence:
+        return ""
     words = sentence.split()
     # Capitalize each word
     capitalized_words = [capitalize_first_letter(word) for word in words]
