@@ -100,6 +100,7 @@ def fetchData(url, data, callCount=0):
 
     response = requests.get(url, headers=headers)
 
+    print(response, "response")
     if (response.status_code == 200):
         getOgPrefixMetaTags(response, data)
 
