@@ -100,7 +100,7 @@ def fetchData(url, data, callCount=0):
 
     response = requests.get(url, headers=headers)
 
-    if (response.status_code != 200):
+    if (response.status_code == 200):
         getOgPrefixMetaTags(response, data)
 
         if (data.get('title') == '' or data.get('title') == 'West Elm: 403 - Restricted Access'):
