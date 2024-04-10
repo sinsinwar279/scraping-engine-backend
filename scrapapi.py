@@ -101,7 +101,7 @@ def fetchData(url, data, callCount=0):
     response = requests.get(url, headers=headers)
 
     print(response, "response")
-    app.logger.info(response, "response")
+    app.logger.info('%s response', response)
     if (response.status_code == 200):
         getOgPrefixMetaTags(response, data)
 
@@ -111,7 +111,7 @@ def fetchData(url, data, callCount=0):
                 for i in range(0, len(arr)):
                     if arr[i] == 'products' and i + 1 < len(arr):
                         data['title'] = arr[i + 1].replace("-", " ").rsplit(' ', 1)[0]
-                        app.logger.info(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
+                        print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                         getDataFromGoogleApi(data.get('title'), data)
                 return
             if (callCount > maxCallLimit):
