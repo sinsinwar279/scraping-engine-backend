@@ -73,19 +73,32 @@ def getResponse(obj):
     fetchData(url, data)
     filterImages(data)
 
+    data['title'] = titleCaseProductTitle(data.get("title"))
+
     return {
         'url': url,
         'id': id,
         'response': data
     }
 
+def capitalize_first_letter(word):
+    # Capitalize the first letter and make all other letters lowercase
+    return word[0].upper() + word[1:].lower()
+
+def titleCaseProductTitle(sentence):
+    # Split the sentence into individual words
+    words = sentence.split()
+    # Capitalize each word
+    capitalized_words = [capitalize_first_letter(word) for word in words]
+    # Join the words back into a sentence
+    return ' '.join(capitalized_words)
 
 def fetchData(url, data, callCount=0):
     global maxCallLimit, headers
 
     response = requests.get(url, headers=headers)
 
-    if (response.status_code == 200):
+    if (response.status_code != 200):
         getOgPrefixMetaTags(response, data)
 
         if (data.get('title') == ''):
@@ -200,4 +213,4 @@ def extractDataFromCSEResponse(response, data):
 
 # Run the Flask application
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, threaded=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, threaded=True, port=5500)
