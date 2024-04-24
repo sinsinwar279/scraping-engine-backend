@@ -142,11 +142,11 @@ def fetchData(url, data, callCount=0):
                         data['title'] = arr[i + 1].replace("-", " ")
                         # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                         getDataFromGoogleApi(data.get('title'), data)
-                        return
+                        return data
 
             return {"error": "No response from Clint's server"}
-
-        getDataFromGoogleApi(data.get('title'), data)
+        else:
+            getDataFromGoogleApi(data.get('title'), data)
 
         return data
 
@@ -161,7 +161,7 @@ def fetchData(url, data, callCount=0):
                     data['title'] = arr[i + 1].replace("-", " ")
                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                     getDataFromGoogleApi(data.get('title'), data)
-                    return
+                    return data
 
     return {"error": f"No response from Clint's server {response}"}
 
