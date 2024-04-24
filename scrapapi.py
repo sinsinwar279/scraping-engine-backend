@@ -105,6 +105,7 @@ def fetchData(url, data, callCount=0):
     # app.logger.info('%s response', response.status_code)
     if (response.status_code == 200):
         getOgPrefixMetaTags(response, data)
+#         print(data, "data")
 
         if (data.get('title') == '' or data.get('title') == 'West Elm: 403 - Restricted Access'):
             if 'westelm' in url:
@@ -115,12 +116,8 @@ def fetchData(url, data, callCount=0):
                         # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                         getDataFromGoogleApi(data.get('title'), data)
                 return
-            if (callCount > maxCallLimit):
-                # abort(400, "No response from Clint's server")
-                return {"error": "No response from Clint's server"}
 
-            time.sleep(delay[callCount])
-            return fetchData(url, data, callCount + 1)
+            return {"error": "No response from Clint's server"}
 
         getDataFromGoogleApi(data.get('title'), data)
 
