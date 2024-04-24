@@ -135,7 +135,7 @@ def fetchData(url, data, callCount=0):
                         data['title'] = arr[i + 1].replace("-", " ")
                         # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                         getDataFromGoogleApi(data.get('title'), data)
-                return
+                        return
 
             return {"error": "No response from Clint's server"}
 
@@ -154,15 +154,8 @@ def fetchData(url, data, callCount=0):
                     data['title'] = arr[i + 1].replace("-", " ")
                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                     getDataFromGoogleApi(data.get('title'), data)
-            return
-#         if (callCount > maxCallLimit):
-#             # abort(400, "No response from Clint's server")
-#             return {"error": "No response from Clint's server"}
+                    return
 
-#         time.sleep(delay[callCount])
-#         return fetchData(url, data, callCount + 1)
-
-    # abort(400, "No response from Clint's server")
     return {"error": f"No response from Clint's server {response}"}
 
 
@@ -195,11 +188,6 @@ def getOgPrefixMetaTags(response, data):
 
 
 def getDataFromGoogleApi(productTitle, data, callCount=0):
-    global maxCallLimit
-
-    if (callCount >= maxCallLimit):
-        # abort(400, "No response from CSE")
-        return []
 
     api_key = "AIzaSyBU3CCsLdjPTPG0FLqjh7SdhIogmAP9Mls"
     cse_id = "1123473d2f0334801"
@@ -218,9 +206,6 @@ def getDataFromGoogleApi(productTitle, data, callCount=0):
 
     if response.status_code == 200:
         return extractDataFromCSEResponse(response.json(), data)
-    else:
-        time.sleep(delay[callCount])
-        return getDataFromGoogleApi(url, data, callCount + 1)
 
 
 def extractDataFromCSEResponse(response, data):
