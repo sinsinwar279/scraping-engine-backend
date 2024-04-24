@@ -115,6 +115,7 @@ def fetchData(url, data, callCount=0):
     response = requests.get(url, headers=headers)
     # app.logger.info('%s response', response.text)
     # app.logger.info('%s response', response.status_code)
+    app.logger.info(url)
     app.logger.info("res")
     app.logger.info(response.status_code)
 
