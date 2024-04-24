@@ -121,11 +121,11 @@ def fetchData(url, data, callCount=0):
         app.logger.info(data)
 
         if (data.get('title') == '' or data.get('title') == 'West Elm: 403 - Restricted Access'):
-            if 'westelm' in url or 'potterybarn' in url:
+            if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url:
                 arr = url.split('/')
                 for i in range(0, len(arr)):
                     if arr[i] == 'products' and i + 1 < len(arr):
-                        data['title'] = arr[i + 1].replace("-", " ").rsplit(' ', 1)[0]
+                        data['title'] = arr[i + 1].replace("-", " ")
                         # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                         getDataFromGoogleApi(data.get('title'), data)
                 return
@@ -137,11 +137,11 @@ def fetchData(url, data, callCount=0):
         return data
 
     else:
-        if 'westelm' in url or 'potterybarn' in url:
+        if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url:
             arr = url.split('/')
             for i in range(0, len(arr)):
                 if arr[i] == 'products' and i + 1 < len(arr):
-                    data['title'] = arr[i + 1].replace("-", " ").rsplit(' ', 1)[0]
+                    data['title'] = arr[i + 1].replace("-", " ")
                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                     getDataFromGoogleApi(data.get('title'), data)
             return
