@@ -127,7 +127,7 @@ def fetchData(url, data, callCount=0):
                     str = "products"
                     if 'potterybarnkids' in url:
                         str = "shop"
-                    if arr[i] == shop and i + 1 < len(arr):
+                    if arr[i] == str and i + 1 < len(arr):
                         data['title'] = arr[i + 1].replace("-", " ")
                         # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                         getDataFromGoogleApi(data.get('title'), data)
@@ -146,7 +146,7 @@ def fetchData(url, data, callCount=0):
                 str = "products"
                 if 'potterybarnkids' in url:
                     str = "shop"
-                if arr[i] == shop and i + 1 < len(arr):
+                if arr[i] == str and i + 1 < len(arr):
                     data['title'] = arr[i + 1].replace("-", " ")
                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                     getDataFromGoogleApi(data.get('title'), data)
