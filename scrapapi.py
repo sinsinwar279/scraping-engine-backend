@@ -43,17 +43,18 @@ def get_responce():
     num_cores = multiprocessing.cpu_count()
     max_workers = num_cores + 1
 
-#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-#         # Submit API requests asynchronously
-#         futures = [executor.submit(getResponse, obj) for obj in urlList]
-#
-#         # Wait for all the API requests to complete
-#         results = [future.result() for future in futures]
-
     before = time.time()
-    results = []
-    for obj in urlList:
-        results.append(getResponse(obj))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit API requests asynchronously
+        futures = [executor.submit(getResponse, obj) for obj in urlList]
+
+        # Wait for all the API requests to complete
+        results = [future.result() for future in futures]
+
+
+#     results = []
+#     for obj in urlList:
+#         results.append(getResponse(obj))
 
     after = time.time()
 
