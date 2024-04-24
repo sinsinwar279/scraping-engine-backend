@@ -176,10 +176,10 @@ def fetchData(url, data, callCount=0):
                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                     getDataFromGoogleApi(data.get('title'), data)
                     return data
-                e1 = time.time()
+                ei = time.time()
                 app.logger.info("for i response time : ")
                 app.logger.info(i)
-                app.logger.info(after - before)
+                app.logger.info(ei - bi)
             after = time.time()
             app.logger.info("for loop response time")
             app.logger.info(after - before)
