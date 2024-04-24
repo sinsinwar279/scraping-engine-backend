@@ -167,15 +167,21 @@ def fetchData(url, data, callCount=0):
     else:
         if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url or 'pbteen' in url or 'potterybarnkids' in url:
             arr = url.split('/')
+            before = time.time()
             for i in range(0, len(arr)):
+                bi = time.time()
                 str = "products"
-#                 if 'potterybarnkids' in url:
-#                     str = "shop"
                 if arr[i] == str and i + 1 < len(arr):
                     data['title'] = arr[i + 1].replace("-", " ")
                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                     getDataFromGoogleApi(data.get('title'), data)
                     return data
+                e1 = time.time()
+                app.logger.info("for i response time : ", i)
+                app.logger.info(after - before)
+            after = time.time()
+            app.logger.info("for loop response time")
+            app.logger.info(after - before)
 
     return {"error": f"No response from Clint's server {response}"}
 
