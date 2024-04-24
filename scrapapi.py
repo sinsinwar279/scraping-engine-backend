@@ -136,8 +136,8 @@ def fetchData(url, data, callCount=0):
                 arr = url.split('/')
                 for i in range(0, len(arr)):
                     str = "products"
-                    if 'potterybarnkids' in url:
-                        str = "shop"
+#                     if 'potterybarnkids' in url:
+#                         str = "shop"
                     if arr[i] == str and i + 1 < len(arr):
                         data['title'] = arr[i + 1].replace("-", " ")
                         # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
@@ -155,8 +155,8 @@ def fetchData(url, data, callCount=0):
             arr = url.split('/')
             for i in range(0, len(arr)):
                 str = "products"
-                if 'potterybarnkids' in url:
-                    str = "shop"
+#                 if 'potterybarnkids' in url:
+#                     str = "shop"
                 if arr[i] == str and i + 1 < len(arr):
                     data['title'] = arr[i + 1].replace("-", " ")
                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
