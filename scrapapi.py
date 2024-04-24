@@ -170,6 +170,7 @@ def fetchData(url, data, callCount=0):
             before = time.time()
             for i in range(0, len(arr)):
                 bi = time.time()
+                app.logger.info(arr[i])
                 str = "products"
                 if arr[i] == str and i + 1 < len(arr):
                     data['title'] = arr[i + 1].replace("-", " ")
