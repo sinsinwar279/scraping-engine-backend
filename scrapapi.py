@@ -50,9 +50,15 @@ def get_responce():
 #         # Wait for all the API requests to complete
 #         results = [future.result() for future in futures]
 
+    before = time.time()
     results = []
     for obj in urlList:
         results.append(getResponse(obj))
+
+    after = time.time()
+
+    app.logger.info("total time")
+    app.logger.info(after - before)
 
     return jsonify(results)
 
