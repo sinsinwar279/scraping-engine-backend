@@ -98,11 +98,19 @@ def titleCaseProductTitle(sentence):
 def fetchData(url, data, callCount=0):
     global maxCallLimit, headers
 
-    response = requests.get(url, headers=headers)
+#     res = 200
+#     while res == 200:
+#         response = requests.get(url, headers=headers)
+#         print(response.status_code, "response status")
+#         res = response.status_code
 
-    # print(response, "response")
+#     print(response, "response")
+
+
+    response = requests.get(url, headers=headers)
     # app.logger.info('%s response', response.text)
     # app.logger.info('%s response', response.status_code)
+
     if (response.status_code == 200):
         getOgPrefixMetaTags(response, data)
 #         print(data, "data")
@@ -123,21 +131,21 @@ def fetchData(url, data, callCount=0):
 
         return data
 
-    else:
-        if 'westelm' in url:
-            arr = url.split('/')
-            for i in range(0, len(arr)):
-                if arr[i] == 'products' and i + 1 < len(arr):
-                    data['title'] = arr[i + 1].replace("-", " ").rsplit(' ', 1)[0]
-                    # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
-                    getDataFromGoogleApi(data.get('title'), data)
-            return
-        if (callCount > maxCallLimit):
-            # abort(400, "No response from Clint's server")
-            return {"error": "No response from Clint's server"}
-
-        time.sleep(delay[callCount])
-        return fetchData(url, data, callCount + 1)
+#     else:
+#         if 'westelm' in url:
+#             arr = url.split('/')
+#             for i in range(0, len(arr)):
+#                 if arr[i] == 'products' and i + 1 < len(arr):
+#                     data['title'] = arr[i + 1].replace("-", " ").rsplit(' ', 1)[0]
+#                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
+#                     getDataFromGoogleApi(data.get('title'), data)
+#             return
+#         if (callCount > maxCallLimit):
+#             # abort(400, "No response from Clint's server")
+#             return {"error": "No response from Clint's server"}
+#
+#         time.sleep(delay[callCount])
+#         return fetchData(url, data, callCount + 1)
 
     # abort(400, "No response from Clint's server")
     return {"error": f"No response from Clint's server {response}"}
@@ -215,4 +223,4 @@ def extractDataFromCSEResponse(response, data):
 
 # Run the Flask application
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, threaded=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, threaded=True, port=5500)
