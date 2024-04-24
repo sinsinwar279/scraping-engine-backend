@@ -113,7 +113,9 @@ def fetchData(url, data, callCount=0):
 
     if (response.status_code == 200):
         getOgPrefixMetaTags(response, data)
-        print(data, "data")
+#         print(data, "data")
+        app.logger.info("data")
+        app.logger.info(data)
 
         if (data.get('title') == '' or data.get('title') == 'West Elm: 403 - Restricted Access'):
             if 'westelm' in url:
