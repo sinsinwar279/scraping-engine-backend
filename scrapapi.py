@@ -14,7 +14,7 @@ app.config['CORS_HEADERS'] = 'Content-Type, authorization, access-control-allow-
 app.config["DEBUG"] = True
 
 delay = [0, 1, 2, 4]
-maxCallLimit = 4
+maxCallLimit = 3
 
 headers = {
 
@@ -111,7 +111,7 @@ def fetchData(url, data, callCount=0):
     # app.logger.info('%s response', response.text)
     # app.logger.info('%s response', response.status_code)
 
-    if (response.status_code == 200):
+    if (response.status_code == 200 or response.status_code == 201):
         getOgPrefixMetaTags(response, data)
 #         print(data, "data")
         app.logger.info("data")
