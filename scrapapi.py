@@ -205,7 +205,12 @@ def getDataFromGoogleApi(productTitle, data, callCount=0):
 
     url = f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={productTitle}&searchType=image&num=10"
 
+    before = time.time()
     response = requests.get(url)
+    after = time.time()
+
+    app.logger.info(after - before)
+    app.logger.info("google api time")
 
     if response.status_code == 200:
         return extractDataFromCSEResponse(response.json(), data)
