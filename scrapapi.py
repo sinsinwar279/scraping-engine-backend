@@ -121,7 +121,7 @@ def fetchData(url, data, callCount=0):
         app.logger.info(data)
 
         if (data.get('title') == '' or data.get('title') == 'West Elm: 403 - Restricted Access'):
-            if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url:
+            if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url:
                 arr = url.split('/')
                 for i in range(0, len(arr)):
                     if arr[i] == 'products' and i + 1 < len(arr):
@@ -137,7 +137,7 @@ def fetchData(url, data, callCount=0):
         return data
 
     else:
-        if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url:
+        if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url:
             arr = url.split('/')
             for i in range(0, len(arr)):
                 if arr[i] == 'products' and i + 1 < len(arr):
@@ -145,12 +145,12 @@ def fetchData(url, data, callCount=0):
                     # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
                     getDataFromGoogleApi(data.get('title'), data)
             return
-        if (callCount > maxCallLimit):
-            # abort(400, "No response from Clint's server")
-            return {"error": "No response from Clint's server"}
+#         if (callCount > maxCallLimit):
+#             # abort(400, "No response from Clint's server")
+#             return {"error": "No response from Clint's server"}
 
-        time.sleep(delay[callCount])
-        return fetchData(url, data, callCount + 1)
+#         time.sleep(delay[callCount])
+#         return fetchData(url, data, callCount + 1)
 
     # abort(400, "No response from Clint's server")
     return {"error": f"No response from Clint's server {response}"}
