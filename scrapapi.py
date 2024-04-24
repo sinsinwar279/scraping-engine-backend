@@ -81,10 +81,23 @@ def getResponse(obj):
         'description': ''
     }
 
+    before = time.time()
     fetchData(url, data)
-    filterImages(data)
+    after = time.time()
+    app.logger.info("fetchData response time")
+    app.logger.info(after - before)
 
+    before = time.time()
+    filterImages(data)
+    after = time.time()
+    app.logger.info("filterImages response time")
+    app.logger.info(after - before)
+
+    before = time.time()
     data['title'] = titleCaseProductTitle(data.get("title"))
+    after = time.time()
+    app.logger.info("titleCaseProductTitle response time")
+    app.logger.info(after - before)
 
     return {
         'url': url,
