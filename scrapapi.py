@@ -140,7 +140,7 @@ def fetchData(url, data, callCount=0):
     #     print(response, "response")
 
     br = time.time()
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=5000)
     rr = time.time()
     app.logger.info("*************")
     app.logger.info(rr-br)
