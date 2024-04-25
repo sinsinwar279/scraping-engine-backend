@@ -160,7 +160,6 @@ def fetchData(url, data, callCount=0):
             before = time.time()
             for i in range(0, len(arr)):
                 bi = time.time()
-                app.logger.info(arr[i])
                 str = "products"
                 if arr[i] == str and i + 1 < len(arr):
                     data['title'] = arr[i + 1].replace("-", " ")
@@ -173,9 +172,12 @@ def fetchData(url, data, callCount=0):
                     app.logger.info(ei1 - bi1)
                     return data
                 ei = time.time()
-                app.logger.info("for i response time : ")
+                app.logger.info("******************************************")
+                app.logger.info("i : ")
                 app.logger.info(i)
+                app.logger.info(arr[i])
                 app.logger.info(ei - bi)
+            app.logger.info("******************************************")
             after = time.time()
             app.logger.info("for loop response time")
             app.logger.info(after - before)
@@ -286,4 +288,4 @@ def extractDataFromCSEResponse(response, data):
 
 # Run the Flask application
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, threaded=True, port=5500)
+    app.run(host='0.0.0.0', debug=True, threaded=True, port=5000)
