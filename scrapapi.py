@@ -140,15 +140,20 @@ def fetchData(url, data, callCount=0):
     #     print(response, "response")
 
     br = time.time()
-    response = requests.get(url, headers=headers, timeout=5)
+    res = 403
+    try:
+        response = requests.get(url, headers=headers, timeout=5)
+        res = response.status_code
+    except Exception as e:
+        app.logger.info("time out")
     rr = time.time()
     app.logger.info("*************")
     app.logger.info(rr-br)
     app.logger.info(url)
     app.logger.info("response status")
-    app.logger.info(response.status_code)
+    # app.logger.info(response.status_code)
 
-    if response.status_code == 200:
+    if res == 200:
         getOgPrefixMetaTags(response, data)
         #         print(data, "data")
         app.logger.info("*************")
