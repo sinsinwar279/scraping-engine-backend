@@ -160,7 +160,7 @@ def fetchData(url, data, callCount=0):
         app.logger.info("data")
         app.logger.info(data)
 
-        if not data.get('title') and ('westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url or 'pbteen' in url or 'potterybarnkids' in url):
+        if ('westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url or 'pbteen' in url or 'potterybarnkids' in url):
             arr = url.split('/')
             before = time.time()
             for i in range(0, len(arr)):
