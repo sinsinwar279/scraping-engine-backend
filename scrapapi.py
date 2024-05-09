@@ -259,7 +259,7 @@ def getDataFromGoogleApi(productTitle, data, callCount=0):
     # api_key = "AIzaSyD4GOZSGBQlg0xzBl9qQkpNdBVkHfohLDA"
     # cse_id = "2070d058d8eee4de0"
 
-    url = f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={productTitle}&searchType=image&num=10"
+    url = f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={productTitle}&searchType=image&num=7"
 
     before = time.time()
     response = requests.get(url)
