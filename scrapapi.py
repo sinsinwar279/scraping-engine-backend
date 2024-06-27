@@ -34,6 +34,46 @@ headers = {
 }
 
 
+@app.route('/getTrackingDetailsWSI', methods=['POST'])
+def get_tracking_details_wsi_function():
+    req = request.get_json()
+
+    if not req.get("domain") or not req.get("order_id") or not req.get("zip_code"):
+        return jsonify({"error": "Bad Request", "message": "missing parameters"}), 400
+
+    url = f"https://www.{req.get('domain')}.com/customer-service/order-status/v1/order-details/index.json?orderNumber={req.get('order_id')}&postalCode={req.get('zip_code')}"
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+        return jsonify(data)
+
+    except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 400:
+            return jsonify({"error": "Bad Request", "message": response.text}), 400
+        elif response.status_code == 401:
+            return jsonify({"error": "Unauthorized", "message": response.text}), 401
+        elif response.status_code == 403:
+            return jsonify({"error": "Forbidden", "message": response.text}), 403
+        elif response.status_code == 404:
+            return jsonify({"error": "Not Found", "message": response.text}), 404
+        elif response.status_code == 500:
+            return jsonify({"error": "Internal Server Error", "message": response.text}), 500
+        else:
+            return jsonify({"error": "HTTP error occurred", "message": str(http_err)}), response.status_code
+
+    except requests.exceptions.ConnectionError as conn_err:
+        return jsonify({"error": "Connection error occurred", "message": str(conn_err)}), 503
+
+    except requests.exceptions.Timeout as timeout_err:
+        return jsonify({"error": "Timeout error occurred", "message": str(timeout_err)}), 504
+
+    except requests.exceptions.RequestException as req_err:
+        return jsonify({"error": "An error occurred", "message": str(req_err)}), 500
+
+
 # Define another route that accepts parameters
 @app.route('/scrap', methods=['POST'])
 def get_responce():
