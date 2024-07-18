@@ -37,6 +37,8 @@ headers = {
 def get_tracking_details_wsi_function():
     req = request.get_json()
 
+    app.logger.info(req)
+
     if not req.get("domain") or not req.get("order_id") or not req.get("zip_code"):
         return jsonify({"error": "Bad Request", "message": "missing parameters"}), 400
 
@@ -47,9 +49,12 @@ def get_tracking_details_wsi_function():
         response.raise_for_status()
 
         data = response.json()
+        app.logger.info(jsonify(data))
         return jsonify(data)
 
     except requests.exceptions.HTTPError as http_err:
+        app.logger.error(response.status_code)
+        app.logger.error(http_err)
         if response.status_code == 400:
             return jsonify({"error": "Bad Request", "message": response.text}), 400
         elif response.status_code == 401:
@@ -226,13 +231,7 @@ def getDataFromGoogleApi(productTitle, data, callCount=0):
 
     url = f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={productTitle}&searchType=image&num=7"
 
-    before = time.time()
     response = requests.get(url)
-    after = time.time()
-
-    app.logger.info("***********************************")
-    app.logger.info("google api time")
-    app.logger.info(after - before)
 
     if response.status_code == 200:
         return extractDataFromCSEResponse(response.json(), data)
