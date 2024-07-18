@@ -19,7 +19,6 @@ maxCallLimit = 3
 headers = {
 
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0",
-    #   "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
     "Accept-Encoding": "gzip, deflate",
     "Connection": "keep-alive",
@@ -91,10 +90,6 @@ def get_responce():
         # Wait for all the API requests to complete
         results = [future.result() for future in futures]
 
-    #     results = []
-    #     for obj in urlList:
-    #         results.append(getResponse(obj))
-
     after = time.time()
 
     app.logger.info("total time")
@@ -124,26 +119,11 @@ def getResponse(obj):
         'description': ''
     }
 
-    app.logger.info("********************************************************************************************************")
-    before = time.time()
     fetchData(url, data)
-    after = time.time()
-    app.logger.info("fetchData response time")
-    app.logger.info(after - before)
 
-    app.logger.info("********************************************************************************************************")
-    before = time.time()
     filterImages(data)
-    after = time.time()
-    app.logger.info("filterImages response time")
-    app.logger.info(after - before)
 
-    app.logger.info("********************************************************************************************************")
-    before = time.time()
     data['title'] = titleCaseProductTitle(data.get("title", ""))
-    after = time.time()
-    app.logger.info("titleCaseProductTitle response time")
-    app.logger.info(after - before)
 
     return {
         'url': url,
@@ -170,96 +150,40 @@ def titleCaseProductTitle(sentence):
 
 def fetchData(url, data, callCount=0):
     global maxCallLimit, headers
+    if callCount >= maxCallLimit:
+        return None
 
-    #     res = 200
-    #     while res == 200:
-    #         response = requests.get(url, headers=headers)
-    #         print(response.status_code, "response status")
-    #         res = response.status_code
+    if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url or 'pbteen' in url or 'potterybarnkids' in url:
+        arr = url.split('/')
+        for i in range(0, len(arr)):
+            str = "products"
+            if arr[i] == str and i + 1 < len(arr):
+                data['title'] = arr[i + 1].replace("-", " ")
+                getDataFromGoogleApi(data.get('title'), data)
+                return data
+    else:
+        res = 403
+        try:
+            response = requests.get(url, headers=headers, timeout=5)
+            res = response.status_code
+        except requests.exceptions.HTTPError as http_err:
+            app.logger.info(response.status_code)
+            return fetchData(url, data, callCount + 1)
 
-    #     print(response, "response")
-
-    br = time.time()
-    res = 403
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        res = response.status_code
-    except Exception as e:
-        app.logger.info("time out")
-    rr = time.time()
-    app.logger.info("*************")
-    app.logger.info(rr-br)
-    app.logger.info(url)
-    app.logger.info("response status")
-    # app.logger.info(response.status_code)
-
-    if res == 200:
-        getOgPrefixMetaTags(response, data)
-        #         print(data, "data")
         app.logger.info("*************")
-        app.logger.info("data")
-        app.logger.info(data)
+        app.logger.info(url)
+        app.logger.info("response status")
+        # app.logger.info(response.status_code)
 
-        if not data['title'] and ('westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url or 'pbteen' in url or 'potterybarnkids' in url):
-            arr = url.split('/')
-            before = time.time()
-            for i in range(0, len(arr)):
-                bi = time.time()
-                str = "products"
-                if arr[i] == str and i + 1 < len(arr):
-                    data['title'] = arr[i + 1].replace("-", " ")
-                    # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
-                    bi1 = time.time()
-                    getDataFromGoogleApi(data.get('title'), data)
-                    ei1 = time.time()
-                    app.logger.info("******************************************")
-                    app.logger.info("total time in google api")
-                    app.logger.info(ei1 - bi1)
-                    return data
-                ei = time.time()
-                app.logger.info("******************************************")
-                app.logger.info("i : ")
-                app.logger.info(i)
-                app.logger.info(arr[i])
-                app.logger.info(ei - bi)
-            app.logger.info("******************************************")
-            after = time.time()
-            app.logger.info("for loop response time")
-            app.logger.info(after - before)
+        if res == 200:
+            getOgPrefixMetaTags(response, data)
+            app.logger.info("*************")
+            app.logger.info("data")
+            app.logger.info(data)
 
-            return {"error": "No response from Clint's server"}
-        else:
             getDataFromGoogleApi(data.get('title'), data)
 
-        return data
-
-    else:
-        if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url or 'pbteen' in url or 'potterybarnkids' in url:
-            arr = url.split('/')
-            before = time.time()
-            for i in range(0, len(arr)):
-                bi = time.time()
-                str = "products"
-                if arr[i] == str and i + 1 < len(arr):
-                    data['title'] = arr[i + 1].replace("-", " ")
-                    # print(arr[i + 1].replace("-", " ").rsplit(' ', 1), "title")
-                    bi1 = time.time()
-                    getDataFromGoogleApi(data.get('title'), data)
-                    ei1 = time.time()
-                    app.logger.info("******************************************")
-                    app.logger.info("total time in google api")
-                    app.logger.info(ei1 - bi1)
-                    return data
-                ei = time.time()
-                app.logger.info("******************************************")
-                app.logger.info("i : ")
-                app.logger.info(i)
-                app.logger.info(arr[i])
-                app.logger.info(ei - bi)
-            app.logger.info("******************************************")
-            after = time.time()
-            app.logger.info("for loop response time")
-            app.logger.info(after - before)
+            return data
 
     return {"error": f"No response from Clint's server {response}"}
 
@@ -293,11 +217,12 @@ def getOgPrefixMetaTags(response, data):
 
 
 def getDataFromGoogleApi(productTitle, data, callCount=0):
+    global maxCallLimit
+    if callCount >= maxCallLimit:
+        return None
+
     api_key = "AIzaSyBU3CCsLdjPTPG0FLqjh7SdhIogmAP9Mls"
     cse_id = "1123473d2f0334801"
-
-    # api_key = "AIzaSyD4GOZSGBQlg0xzBl9qQkpNdBVkHfohLDA"
-    # cse_id = "2070d058d8eee4de0"
 
     url = f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={productTitle}&searchType=image&num=7"
 
@@ -311,6 +236,8 @@ def getDataFromGoogleApi(productTitle, data, callCount=0):
 
     if response.status_code == 200:
         return extractDataFromCSEResponse(response.json(), data)
+    else:
+        return getDataFromGoogleApi(productTitle, data, callCount + 1)
 
 
 def extractDataFromCSEResponse(response, data):
@@ -333,4 +260,4 @@ def extractDataFromCSEResponse(response, data):
 
 # Run the Flask application
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, threaded=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, threaded=True, port=5001)
