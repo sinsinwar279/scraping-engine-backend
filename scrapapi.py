@@ -49,7 +49,7 @@ def get_tracking_details_wsi_function():
         response.raise_for_status()
 
         data = response.json()
-        app.logger.info(jsonify(data))
+        app.logger.info(data)
         return jsonify(data)
 
     except requests.exceptions.HTTPError as http_err:
