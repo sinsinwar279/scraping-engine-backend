@@ -190,7 +190,7 @@ def fetchData(url, data, callCount=0):
 
             return data
 
-    return {"error": f"No response from Clint's server {response}"}
+    return {"error": f"No response from Clint's server"}
 
 
 def getOgPrefixMetaTags(response, data):
