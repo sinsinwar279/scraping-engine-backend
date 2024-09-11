@@ -1,3 +1,5 @@
+import random
+
 from flask import Flask, jsonify, abort, request
 import multiprocessing
 import requests
@@ -87,7 +89,7 @@ def get_responce():
     num_cores = multiprocessing.cpu_count()
     max_workers = num_cores + 1
 
-    before = time.time()
+    # before = time.time()
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit API requests asynchronously
         futures = [executor.submit(getResponse, obj) for obj in urlList]
@@ -95,15 +97,15 @@ def get_responce():
         # Wait for all the API requests to complete
         results = [future.result() for future in futures]
 
-    after = time.time()
+    # after = time.time()
 
-    app.logger.info("total time")
-    app.logger.info(after - before)
+    # app.logger.info("total time")
+    # app.logger.info(after - before)
 
     return jsonify(results)
 
 
-def filterImages(data):
+def filter_images(data):
     pattern = r'\.(jpg|png|jpeg|jfif|pjpeg|pjp|svg|gif|webp)'
     modified_images = []
 
@@ -124,11 +126,11 @@ def getResponse(obj):
         'description': ''
     }
 
-    fetchData(url, data)
+    fetch_data(url, data)
 
-    filterImages(data)
+    filter_images(data)
 
-    data['title'] = titleCaseProductTitle(data.get("title", ""))
+    data['title'] = title_case_product_title(data["title"])
 
     return {
         'url': url,
@@ -142,7 +144,7 @@ def capitalize_first_letter(word):
     return word[0].upper() + word[1:].lower()
 
 
-def titleCaseProductTitle(sentence):
+def title_case_product_title(sentence):
     # Split the sentence into individual words
     if not sentence:
         return ""
@@ -153,96 +155,203 @@ def titleCaseProductTitle(sentence):
     return ' '.join(capitalized_words)
 
 
-def fetchData(url, data, callCount=0):
-    global maxCallLimit, headers
-    if callCount >= maxCallLimit:
+def is_wsi_brand(brand_name):
+    if ('westelm' == brand_name or 'potterybarn' == brand_name or 'rejuvenation' == brand_name or
+            'williams-sonoma' == brand_name or 'pbteen' == brand_name or 'potterybarnkids' == brand_name):
+        return True
+    return False
+
+
+def get_brand_name(url):
+    pattern = r'www\.([^.]+)\.'
+    match = re.search(pattern, url)
+
+    if match:
+        return match.group(1)
+    else:
         return None
 
-    if 'westelm' in url or 'potterybarn' in url or 'rejuvenation' in url or 'williams-sonoma' in url or 'pbteen' in url or 'potterybarnkids' in url:
-        arr = url.split('/')
-        for i in range(0, len(arr)):
-            str = "products"
-            if arr[i] == str and i + 1 < len(arr):
-                data['title'] = arr[i + 1].replace("-", " ")
-                getDataFromGoogleApi(data.get('title'), data)
-                return data
-    else:
-        res = 403
+
+def get_is_title_source_url(brand_name):
+    if is_wsi_brand(brand_name) or brand_name == 'etsy':
+        return True
+    return False
+
+
+def get_wsi_product_title_from_url(url):
+    arr = url.split('/')
+    for i in range(0, len(arr)):
+        temp_str = "products"
+        if arr[i] == temp_str and i + 1 < len(arr):
+            return arr[i + 1].replace("-", " ")
+    return None
+
+
+def get_etsy_product_title_from_url(url):
+    pattern = r'/listing/\d+/([^/?]+)'
+    match = re.search(pattern, url)
+
+    if match:
+        return match.group(1).replace("-", " ")
+    return None
+
+
+def get_title_from_url(url, brand_name):
+    if is_wsi_brand(brand_name):
+        return get_wsi_product_title_from_url(url)
+    elif brand_name == 'etsy':
+        return get_etsy_product_title_from_url(url)
+
+    return None
+
+
+success_response_status_code_list = [200, 201]
+
+
+def get_html_response(url):
+    global headers, success_response_status_code_list
+    max_retries = 3
+    retry_count = 0
+
+    while retry_count < max_retries:
         try:
             response = requests.get(url, headers=headers, timeout=5)
-            res = response.status_code
-        except requests.exceptions.HTTPError as http_err:
-            app.logger.info(response.status_code)
-            return fetchData(url, data, callCount + 1)
 
-        app.logger.info("*************")
-        app.logger.info(url)
-        app.logger.info("response status")
-        # app.logger.info(response.status_code)
+            if response.status_code in success_response_status_code_list:
+                return response
+            else:
+                app.logger.info(f"Received status code {response.status_code}, retrying...")
 
-        if res == 200:
-            getOgPrefixMetaTags(response, data)
-            app.logger.info("*************")
-            app.logger.info("data")
-            app.logger.info(data)
+        except requests.exceptions.RequestException as req_err:
+            app.logger.info(f"Request error: {req_err}, retrying...")
 
-            getDataFromGoogleApi(data.get('title'), data)
+        wait_time = random.uniform(1, 5)
+        time.sleep(wait_time)
 
-            return data
+        retry_count += 1
 
-    return {"error": f"No response from Clint's server"}
+    return None
 
 
-def getOgPrefixMetaTags(response, data):
-    html_content = response.text
+def get_title_update_images_from_meta_tags(html_response, data):
+    html_content = html_response.text
 
-    # Parse the HTML content using BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
-    # app.logger.info(soup)
-    # json = soup.find('script', type='application/ld+json')
-    # Extract meta tags from the parsed HTML
     meta_tags = soup.find_all('meta')
-    # app.logger.info("Called")
     for meta_tag in meta_tags:
         for attr_value in meta_tag.attrs.values():
             if isinstance(attr_value, str) and 'og:' in attr_value:
                 # app.logger.info(attr_value)
-                if ('title' in attr_value):
+                if 'title' in attr_value:
                     # app.logger.info(meta_tag.get('content'))
                     data['title'] = meta_tag.get('content')
-                elif ('image' in attr_value):
+                elif 'image' in attr_value:
                     data['images'].append(meta_tag.get('content'))
-                elif ('description' in attr_value):
+                elif 'description' in attr_value:
                     data['description'] = meta_tag.get('content')
 
-    if (data.get('title') == ''):
+    if data['title'] == '':
         data['title'] = soup.title.string if soup.title else ''
 
-    return
+    return data['title']
 
 
-def getDataFromGoogleApi(productTitle, data, callCount=0):
-    global maxCallLimit
-    if callCount >= maxCallLimit:
+def get_title_from_meta_data(url, data):
+    html_response = get_html_response(url)
+    if not html_response:
+        return None
+
+    return get_title_update_images_from_meta_tags(html_response, data)
+
+
+def sanitize_title(title, brand):
+    # Normalize the brand by converting to lowercase and stripping whitespace
+    brand = brand.lower().strip()
+
+    # Create patterns for the brand name and domain variations at the start or end of the title
+    tld_list = "com|org|net|info|biz|edu|gov|mil|co|xyz|in|us|uk|ca|au|de|fr|cn|jp|br|ru|za|aero|asia|coop|museum|jobs|travel|tech|app|online|shop|blog|art|health|news|space|ad|ae|af|ag|ai|al|am|ao|aq|ar|as|at|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bl|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cu|cv|cw|cx|cy|cz|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|fi|fj|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|kj|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mf|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tr|tt|tv|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|za|zm|zw"
+    brand_pattern = r"\s*".join(brand)
+    brand_pattern = rf"^[^\w]*{brand_pattern}[^\w]*|[^\w]*{brand_pattern}[^\w]*$"
+    domain_pattern = rf"(^|\s+){re.escape(brand)}\.({tld_list})[^\w\s]*"
+
+    # Remove the brand name and domain variations from the title
+    sanitized_title = re.sub(domain_pattern, "", title, flags=re.IGNORECASE)
+    sanitized_title = re.sub(brand_pattern, "", sanitized_title, flags=re.IGNORECASE)
+
+    # Remove any leading or trailing whitespace after processing
+    sanitized_title = sanitized_title.strip()
+
+    # Clean up any residual extra spaces created by the removal process
+    sanitized_title = re.sub(r'\s{2,}', ' ', sanitized_title)
+
+    # Remove any special characters from the start or end of the title
+    sanitized_title = re.sub(r'^[^\w\s]+|[^\w\s]+$', '', sanitized_title)
+
+    return sanitized_title
+
+
+def sanitize_product_title_amazon(product_title):
+    return product_title.split(",")[0]
+
+
+def sanitize_product_title(product_title, brand_name):
+    product_title = sanitize_title(product_title, brand_name)
+
+    if brand_name == 'amazon':
+        product_title = sanitize_product_title_amazon(product_title)
+
+    return product_title
+
+
+def fetch_data(url, data, call_count=0):
+    global maxCallLimit, headers
+    if call_count >= maxCallLimit:
+        return None
+
+    brand_name = get_brand_name(url)
+    if not brand_name:
+        return None
+
+    is_title_source_url = get_is_title_source_url(brand_name)
+    product_title = None
+    if not is_title_source_url:
+        product_title = get_title_from_meta_data(url, data)
+
+    if is_title_source_url or not product_title:
+        product_title = get_title_from_url(url, brand_name)
+
+    if not product_title:
+        return
+
+    product_title = sanitize_product_title(product_title, brand_name)
+    data['title'] = product_title
+
+    get_data_from_google_api(product_title, brand_name, data)
+
+
+def get_data_from_google_api(product_title, brand_name, data, call_count=0):
+    global maxCallLimit, success_response_status_code_list
+    if call_count >= maxCallLimit:
         return None
 
     api_key = "AIzaSyBU3CCsLdjPTPG0FLqjh7SdhIogmAP9Mls"
     cse_id = "1123473d2f0334801"
 
-    url = f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={productTitle}&searchType=image&num=7"
+    url = (f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={product_title + ' ' + brand_name}"
+           f"&searchType=image&num=7")
 
     response = requests.get(url)
 
-    if response.status_code == 200:
-        return extractDataFromCSEResponse(response.json(), data)
+    if response.status_code in success_response_status_code_list:
+        return extract_data_from_cse_response(response.json(), data)
     else:
-        return getDataFromGoogleApi(productTitle, data, callCount + 1)
+        return get_data_from_google_api(product_title, data, call_count + 1)
 
 
-def extractDataFromCSEResponse(response, data):
+def extract_data_from_cse_response(response, data):
     images = []
 
-    if not 'items' in response:
+    if 'items' not in response:
         return
 
     for item in response.get('items'):
