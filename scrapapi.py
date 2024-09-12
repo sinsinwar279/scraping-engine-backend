@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from flask_cors import CORS, cross_origin
 import re
 import logging
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 CORS(app)
@@ -92,7 +93,7 @@ def get_responce():
     # before = time.time()
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit API requests asynchronously
-        futures = [executor.submit(getResponse, obj) for obj in urlList]
+        futures = [executor.submit(get_response, obj) for obj in urlList]
 
         # Wait for all the API requests to complete
         results = [future.result() for future in futures]
@@ -116,9 +117,29 @@ def filter_images(data):
     data['images'] = modified_images
 
 
-def getResponse(obj):
+def sanitize_url(url):
+    # Parse the given URL
+    parsed_url = urlparse(url)
+
+    # If scheme (http/https) is missing, prepend 'http://'
+    if not parsed_url.scheme:
+        url = 'https://' + url
+
+    # Re-parse the URL after adding the scheme
+    parsed_url = urlparse(url)
+
+    # If the netloc doesn't contain 'www.' and it's just a domain (e.g., 'article.com')
+    if not parsed_url.netloc.startswith('www.'):
+        url = parsed_url.scheme + '://www.' + parsed_url.netloc + parsed_url.path
+
+    return url
+
+
+def get_response(obj):
     url = obj['url']
     id = obj['id']
+
+    url = sanitize_url(url)
 
     data = {
         'title': '',
@@ -368,4 +389,4 @@ def extract_data_from_cse_response(response, data):
 
 # Run the Flask application
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, threaded=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, threaded=True, port=5001)
