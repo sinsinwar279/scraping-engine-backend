@@ -3,14 +3,12 @@ import random
 from flask import Flask, jsonify, abort, request
 import multiprocessing
 import requests
-import httpx
 from bs4 import BeautifulSoup
 import time
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import CORS, cross_origin
 import re
 import logging
-from urllib.parse import urlparse
 
 app = Flask(__name__)
 CORS(app)
