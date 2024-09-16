@@ -3,6 +3,7 @@ import random
 from flask import Flask, jsonify, abort, request
 import multiprocessing
 import requests
+import httpx
 from bs4 import BeautifulSoup
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -103,7 +104,7 @@ def get_responce():
     # app.logger.info("total time")
     # app.logger.info(after - before)
 
-    return jsonify(results)
+    return results
 
 
 def filter_images(data):
@@ -118,44 +119,36 @@ def filter_images(data):
 
 
 def sanitize_url(url):
-    # Parse the given URL
-    parsed_url = urlparse(url)
-
-    # If scheme (http/https) is missing, prepend 'http://'
-    if not parsed_url.scheme:
+    # Ensure the URL has a scheme
+    if not re.match(r'^https?://', url):
         url = 'https://' + url
 
-    # Re-parse the URL after adding the scheme
-    parsed_url = urlparse(url)
+    # Ensure the URL has 'www.' in the netloc
+    # Match the scheme and netloc
+    sanitized_url = re.sub(r'^(https?://)(?!www\.)', r'\1www.', url)
 
-    # If the netloc doesn't contain 'www.' and it's just a domain (e.g., 'article.com')
-    if not parsed_url.netloc.startswith('www.'):
-        url = parsed_url.scheme + '://www.' + parsed_url.netloc + parsed_url.path
-
-    return url
+    return sanitized_url
 
 
 def get_response(obj):
-    url = obj['url']
-    id = obj['id']
-
-    url = sanitize_url(url)
-
     data = {
         'title': '',
         'images': [],
-        'description': ''
+        'description': '',
+        'url': obj['url'],
+        'brand_name': ''
     }
 
-    fetch_data(url, data)
+    data["url"] = sanitize_url(data["url"])
+
+    fetch_data(data)
 
     filter_images(data)
 
     data['title'] = title_case_product_title(data["title"])
 
     return {
-        'url': url,
-        'id': id,
+        'url': data["url"],
         'response': data
     }
 
@@ -230,13 +223,12 @@ success_response_status_code_list = [200, 201]
 
 
 def get_html_response(url):
-    global headers, success_response_status_code_list
     max_retries = 3
     retry_count = 0
 
     while retry_count < max_retries:
         try:
-            response = requests.get(url, headers=headers, timeout=5)
+            response = requests.get(url, headers=headers, timeout=5, verify=False, allow_redirects=True)
 
             if response.status_code in success_response_status_code_list:
                 return response
@@ -270,6 +262,14 @@ def get_title_update_images_from_meta_tags(html_response, data):
                     data['images'].append(meta_tag.get('content'))
                 elif 'description' in attr_value:
                     data['description'] = meta_tag.get('content')
+            else:
+                if 'title' in attr_value and not data['title']:
+                    # app.logger.info(meta_tag.get('content'))
+                    data['title'] = meta_tag.get('content')
+                elif 'image' in attr_value and not data['images']:
+                    data['images'].append(meta_tag.get('content'))
+                elif 'description' in attr_value and not data['description']:
+                    data['description'] = meta_tag.get('content')
 
     if data['title'] == '':
         data['title'] = soup.title.string if soup.title else ''
@@ -277,17 +277,22 @@ def get_title_update_images_from_meta_tags(html_response, data):
     return data['title']
 
 
-def get_title_from_meta_data(url, data):
-    html_response = get_html_response(url)
+def get_title_from_meta_data(data):
+    html_response = get_html_response(data["url"])
     if not html_response:
         return None
+
+    data["url"] = html_response.url
 
     return get_title_update_images_from_meta_tags(html_response, data)
 
 
 def sanitize_title(title, brand):
     # Normalize the brand by converting to lowercase and stripping whitespace
-    brand = brand.lower().strip()
+    if not brand:
+        return title
+
+    brand =  brand.lower().strip()
 
     # Create patterns for the brand name and domain variations at the start or end of the title
     tld_list = "com|org|net|info|biz|edu|gov|mil|co|xyz|in|us|uk|ca|au|de|fr|cn|jp|br|ru|za|aero|asia|coop|museum|jobs|travel|tech|app|online|shop|blog|art|health|news|space|ad|ae|af|ag|ai|al|am|ao|aq|ar|as|at|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bl|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cu|cv|cw|cx|cy|cz|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|fi|fj|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|kj|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mf|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tr|tt|tv|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|za|zm|zw"
@@ -324,33 +329,34 @@ def sanitize_product_title(product_title, brand_name):
     return product_title
 
 
-def fetch_data(url, data, call_count=0):
+def fetch_data(data, call_count=0):
     global maxCallLimit, headers
     if call_count >= maxCallLimit:
         return None
 
-    brand_name = get_brand_name(url)
-    if not brand_name:
-        return None
+    data["brand_name"] = get_brand_name(data["url"])
 
-    is_title_source_url = get_is_title_source_url(brand_name)
+    is_title_source_url = get_is_title_source_url(data["brand_name"])
     product_title = None
     if not is_title_source_url:
-        product_title = get_title_from_meta_data(url, data)
+        product_title = get_title_from_meta_data(data)
+        data["brand_name"] = get_brand_name(data["url"])
 
     if is_title_source_url or not product_title:
-        product_title = get_title_from_url(url, brand_name)
+        product_title = get_title_from_url(data["url"], data["brand_name"])
 
     if not product_title:
         return
 
-    product_title = sanitize_product_title(product_title, brand_name)
-    data['title'] = product_title
+    data['title'] = sanitize_product_title(product_title, data["brand_name"])
 
-    get_data_from_google_api(product_title, brand_name, data)
+    get_data_from_google_api(data)
 
 
-def get_data_from_google_api(product_title, brand_name, data, call_count=0):
+def get_data_from_google_api(data, call_count=0):
+    if not data['title']:
+        return
+
     global maxCallLimit, success_response_status_code_list
     if call_count >= maxCallLimit:
         return None
@@ -358,15 +364,25 @@ def get_data_from_google_api(product_title, brand_name, data, call_count=0):
     api_key = "AIzaSyBU3CCsLdjPTPG0FLqjh7SdhIogmAP9Mls"
     cse_id = "1123473d2f0334801"
 
-    url = (f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={product_title + ' ' + brand_name}"
+    search_string = data['title']
+    if data['brand_name']:
+        search_string = search_string + " " + data['brand_name']
+
+    app.logger.info(search_string)
+
+    url = (f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={search_string}"
            f"&searchType=image&num=7")
 
     response = requests.get(url)
 
+    # app.logger.info(response)
+
     if response.status_code in success_response_status_code_list:
-        return extract_data_from_cse_response(response.json(), data)
+        response_data = response.json()
+        extract_data_from_cse_response(response_data, data)
+        return
     else:
-        return get_data_from_google_api(product_title, data, call_count + 1)
+        return get_data_from_google_api(data, call_count + 1)
 
 
 def extract_data_from_cse_response(response, data):
@@ -379,8 +395,6 @@ def extract_data_from_cse_response(response, data):
         link = item.get('link')
         if link:
             images.append(link)
-
-    # print(len(images))
 
     data['images'].extend(images)
 
