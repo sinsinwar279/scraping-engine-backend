@@ -35,49 +35,49 @@ headers = {
 }
 
 
-@app.route('/getTrackingDetailsWSI', methods=['GET'])
-def get_tracking_details_wsi_function():
-    req = request.get_json()
-
-    app.logger.info(req)
-
-    if not req.get("domain") or not req.get("order_id") or not req.get("zip_code"):
-        return jsonify({"error": "Bad Request", "message": "missing parameters"}), 400
-
-    url = f"https://www.{req.get('domain')}.com/customer-service/order-status/v1/order-details/index.json?orderNumber={req.get('order_id')}&postalCode={req.get('zip_code')}"
-
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-
-        data = response.json()
-        app.logger.info(data)
-        return jsonify(data)
-
-    except requests.exceptions.HTTPError as http_err:
-        app.logger.error(response.status_code)
-        app.logger.error(http_err)
-        if response.status_code == 400:
-            return jsonify({"error": "Bad Request", "message": response.text}), 400
-        elif response.status_code == 401:
-            return jsonify({"error": "Unauthorized", "message": response.text}), 401
-        elif response.status_code == 403:
-            return jsonify({"error": "Forbidden", "message": response.text}), 403
-        elif response.status_code == 404:
-            return jsonify({"error": "Not Found", "message": response.text}), 404
-        elif response.status_code == 500:
-            return jsonify({"error": "Internal Server Error", "message": response.text}), 500
-        else:
-            return jsonify({"error": "HTTP error occurred", "message": str(http_err)}), response.status_code
-
-    except requests.exceptions.ConnectionError as conn_err:
-        return jsonify({"error": "Connection error occurred", "message": str(conn_err)}), 503
-
-    except requests.exceptions.Timeout as timeout_err:
-        return jsonify({"error": "Timeout error occurred", "message": str(timeout_err)}), 504
-
-    except requests.exceptions.RequestException as req_err:
-        return jsonify({"error": "An error occurred", "message": str(req_err)}), 500
+# @app.route('/getTrackingDetailsWSI', methods=['POST'])
+# def get_tracking_details_wsi_function():
+#     req = request.get_json()
+#
+#     app.logger.info(req)
+#
+#     if not req.get("domain") or not req.get("order_id") or not req.get("zip_code"):
+#         return jsonify({"error": "Bad Request", "message": "missing parameters"}), 400
+#
+#     url = f"https://www.{req.get('domain')}.com/customer-service/order-status/v1/order-details/index.json?orderNumber={req.get('order_id')}&postalCode={req.get('zip_code')}"
+#
+#     try:
+#         response = requests.get(url, headers=headers)
+#         response.raise_for_status()
+#
+#         data = response.json()
+#         app.logger.info(data)
+#         return jsonify(data)
+#
+#     except requests.exceptions.HTTPError as http_err:
+#         app.logger.error(response.status_code)
+#         app.logger.error(http_err)
+#         if response.status_code == 400:
+#             return jsonify({"error": "Bad Request", "message": response.text}), 400
+#         elif response.status_code == 401:
+#             return jsonify({"error": "Unauthorized", "message": response.text}), 401
+#         elif response.status_code == 403:
+#             return jsonify({"error": "Forbidden", "message": response.text}), 403
+#         elif response.status_code == 404:
+#             return jsonify({"error": "Not Found", "message": response.text}), 404
+#         elif response.status_code == 500:
+#             return jsonify({"error": "Internal Server Error", "message": response.text}), 500
+#         else:
+#             return jsonify({"error": "HTTP error occurred", "message": str(http_err)}), response.status_code
+#
+#     except requests.exceptions.ConnectionError as conn_err:
+#         return jsonify({"error": "Connection error occurred", "message": str(conn_err)}), 503
+#
+#     except requests.exceptions.Timeout as timeout_err:
+#         return jsonify({"error": "Timeout error occurred", "message": str(timeout_err)}), 504
+#
+#     except requests.exceptions.RequestException as req_err:
+#         return jsonify({"error": "An error occurred", "message": str(req_err)}), 500
 
 
 # Define another route that accepts parameters
@@ -89,7 +89,7 @@ def get_responce():
     num_cores = multiprocessing.cpu_count()
     max_workers = num_cores + 1
 
-    # before = time.time()
+    before = time.time()
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit API requests asynchronously
         futures = [executor.submit(get_response, obj) for obj in urlList]
@@ -97,10 +97,10 @@ def get_responce():
         # Wait for all the API requests to complete
         results = [future.result() for future in futures]
 
-    # after = time.time()
+    after = time.time()
 
-    # app.logger.info("total time")
-    # app.logger.info(after - before)
+    app.logger.info("total time")
+    app.logger.info(after - before)
 
     return results
 
@@ -137,7 +137,7 @@ def get_response(obj):
         'brand_name': ''
     }
 
-    data["url"] = sanitize_url(data["url"])
+    # data["url"] = sanitize_url(data["url"])
 
     fetch_data(data)
 
@@ -226,7 +226,7 @@ def get_html_response(url):
 
     while retry_count < max_retries:
         try:
-            response = requests.get(url, headers=headers, timeout=5, verify=False, allow_redirects=True)
+            response = requests.get(url, headers=headers, timeout=3)
 
             if response.status_code in success_response_status_code_list:
                 return response
@@ -334,19 +334,26 @@ def fetch_data(data, call_count=0):
 
     data["brand_name"] = get_brand_name(data["url"])
 
+    app.logger.info(data["brand_name"])
+
     is_title_source_url = get_is_title_source_url(data["brand_name"])
     product_title = None
     if not is_title_source_url:
         product_title = get_title_from_meta_data(data)
         data["brand_name"] = get_brand_name(data["url"])
 
+    app.logger.info(data["brand_name"])
+
     if is_title_source_url or not product_title:
         product_title = get_title_from_url(data["url"], data["brand_name"])
+
+    app.logger.info(data)
 
     if not product_title:
         return
 
     data['title'] = sanitize_product_title(product_title, data["brand_name"])
+    app.logger.info(data["title"])
 
     get_data_from_google_api(data)
 
