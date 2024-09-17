@@ -208,12 +208,17 @@ def get_etsy_product_title_from_url(url):
     return None
 
 def get_wayfair_product_title_from_url(url):
-    match = re.search(r'/pdp/([a-zA-Z0-9\-]+)-w[0-9]+', url)
+    match = re.search(r'/pdp/([a-zA-Z0-9\-]+)', url)
 
     if match:
         # Replace hyphens with spaces for readability
         title = match.group(1).replace('-', ' ')
-        return title
+
+        # Split the title into words and remove the last word (assuming it's the SKU)
+        title_parts = title.split()
+        cleaned_title = ' '.join(title_parts[:-1])  # Remove the last part (SKU)
+
+        return cleaned_title
     else:
         return None
 
