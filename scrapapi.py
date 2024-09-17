@@ -228,6 +228,8 @@ def get_html_response(url):
         try:
             response = requests.get(url, headers=headers, timeout=3)
 
+            app.logger.info(response.status_code)
+
             if response.status_code in success_response_status_code_list:
                 return response
             else:
