@@ -35,7 +35,7 @@ headers = {
 }
 
 
-@app.route('/getTrackingDetailsWSI', methods=['POST'])
+@app.route('/getTrackingDetailsWSI', methods=['GET'])
 def get_tracking_details_wsi_function():
     req = request.get_json()
 
