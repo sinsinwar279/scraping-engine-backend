@@ -185,7 +185,7 @@ def get_brand_name(url):
 
 
 def get_is_title_source_url(brand_name):
-    if is_wsi_brand(brand_name) or brand_name == 'etsy':
+    if is_wsi_brand(brand_name) or brand_name == 'etsy' or brand_name == 'wayfair':
         return True
     return False
 
@@ -208,15 +208,15 @@ def get_etsy_product_title_from_url(url):
     return None
 
 def get_wayfair_product_title_from_url(url):
-    match = re.search(r'wayfair\.com/[^/]+/([^/]+)', url)
+    match = re.search(r'/([^/]+)\?', url)
 
     if match:
         # Replace hyphens with spaces for readability
         title = match.group(1).replace('-', ' ')
 
-        # Split the title into words and remove the last word (assuming it's the SKU)
+        # Split the title into words and remove the last word if it's a SKU or identifier
         title_parts = title.split()
-        cleaned_title = ' '.join(title_parts[:-1])  # Remove the last part (SKU)
+        cleaned_title = ' '.join(title_parts[:-1])  # Remove the last part (SKU or identifier)
 
         return cleaned_title
     else:
@@ -343,26 +343,19 @@ def fetch_data(data, call_count=0):
 
     data["brand_name"] = get_brand_name(data["url"])
 
-    app.logger.info(data["brand_name"])
-
     is_title_source_url = get_is_title_source_url(data["brand_name"])
     product_title = None
     if not is_title_source_url:
         product_title = get_title_from_meta_data(data)
         data["brand_name"] = get_brand_name(data["url"])
 
-    app.logger.info(data["brand_name"])
-
     if is_title_source_url or not product_title:
         product_title = get_title_from_url(data["url"], data["brand_name"])
-
-    app.logger.info(data)
 
     if not product_title:
         return
 
     data['title'] = sanitize_product_title(product_title, data["brand_name"])
-    app.logger.info(data["title"])
 
     get_data_from_google_api(data)
 
@@ -382,14 +375,10 @@ def get_data_from_google_api(data, call_count=0):
     if data['brand_name']:
         search_string = search_string + " " + data['brand_name']
 
-    app.logger.info(search_string)
-
     url = (f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={search_string}"
            f"&searchType=image&num=7")
 
     response = requests.get(url)
-
-    # app.logger.info(response)
 
     if response.status_code in success_response_status_code_list:
         response_data = response.json()
