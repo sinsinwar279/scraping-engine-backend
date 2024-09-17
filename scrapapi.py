@@ -208,7 +208,7 @@ def get_etsy_product_title_from_url(url):
     return None
 
 def get_wayfair_product_title_from_url(url):
-    match = re.search(r'/pdp/([a-zA-Z0-9\-]+)', url)
+    match = re.search(r'wayfair\.com/[^/]+/([^/]+)', url)
 
     if match:
         # Replace hyphens with spaces for readability
