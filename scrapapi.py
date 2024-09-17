@@ -137,7 +137,7 @@ def get_response(obj):
         'brand_name': ''
     }
 
-    # data["url"] = sanitize_url(data["url"])
+    data["url"] = sanitize_url(data["url"])
 
     fetch_data(data)
 
@@ -207,12 +207,23 @@ def get_etsy_product_title_from_url(url):
         return match.group(1).replace("-", " ")
     return None
 
+def get_wayfair_product_title_from_url(url):
+    match = re.search(r'/pdp/([a-zA-Z0-9\-]+)', url)
+
+    if match:
+        # Replace hyphens with spaces for readability
+        title = match.group(1).replace('-', ' ')
+        return title
+    else:
+        return None
 
 def get_title_from_url(url, brand_name):
     if is_wsi_brand(brand_name):
         return get_wsi_product_title_from_url(url)
     elif brand_name == 'etsy':
         return get_etsy_product_title_from_url(url)
+    elif brand_name == 'wayfair':
+        return get_wayfair_product_title_from_url(url)
 
     return None
 
@@ -221,27 +232,18 @@ success_response_status_code_list = [200, 201]
 
 
 def get_html_response(url):
-    max_retries = 3
-    retry_count = 0
+    try:
+        response = requests.get(url, headers=headers, timeout=3, allow_redirects=True, verify=False)
 
-    while retry_count < max_retries:
-        try:
-            response = requests.get(url, headers=headers, timeout=3)
+        app.logger.info(response.status_code)
 
-            app.logger.info(response.status_code)
+        if response.status_code in success_response_status_code_list:
+            return response
+        else:
+            app.logger.info(f"Received status code {response.status_code}, retrying...")
 
-            if response.status_code in success_response_status_code_list:
-                return response
-            else:
-                app.logger.info(f"Received status code {response.status_code}, retrying...")
-
-        except requests.exceptions.RequestException as req_err:
-            app.logger.info(f"Request error: {req_err}, retrying...")
-
-        wait_time = random.uniform(1, 5)
-        time.sleep(wait_time)
-
-        retry_count += 1
+    except requests.exceptions.RequestException as req_err:
+        app.logger.info(f"Request error: {req_err}")
 
     return None
 
