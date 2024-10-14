@@ -86,16 +86,9 @@ def get_responce():
     data = request.get_json()
     urlList = data.get('urls')
 
-    num_cores = multiprocessing.cpu_count()
-    max_workers = num_cores + 1
-
     before = time.time()
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit API requests asynchronously
-        futures = [executor.submit(get_response, obj) for obj in urlList]
 
-        # Wait for all the API requests to complete
-        results = [future.result() for future in futures]
+    results = get_response(urlList[0])
 
     after = time.time()
 
@@ -241,7 +234,7 @@ success_response_status_code_list = [200, 201]
 
 def get_html_response(url):
     try:
-        response = requests.get(url, headers=headers, timeout=3, allow_redirects=True, verify=False)
+        response = requests.get(url, headers=headers, timeout=4, allow_redirects=True, verify=False)
 
         app.logger.info(response.status_code)
 
@@ -339,10 +332,8 @@ def sanitize_product_title(product_title, brand_name):
     return product_title
 
 
-def fetch_data(data, call_count=0):
-    global maxCallLimit, headers
-    if call_count >= maxCallLimit:
-        return None
+def fetch_data(data):
+    global headers
 
     data["brand_name"] = get_brand_name(data["url"])
 
@@ -363,13 +354,11 @@ def fetch_data(data, call_count=0):
     get_data_from_google_api(data)
 
 
-def get_data_from_google_api(data, call_count=0):
+def get_data_from_google_api(data):
     if not data['title']:
         return
 
-    global maxCallLimit, success_response_status_code_list
-    if call_count >= maxCallLimit:
-        return None
+    global success_response_status_code_list
 
     api_key = "AIzaSyBU3CCsLdjPTPG0FLqjh7SdhIogmAP9Mls"
     cse_id = "1123473d2f0334801"
@@ -381,14 +370,12 @@ def get_data_from_google_api(data, call_count=0):
     url = (f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={search_string}"
            f"&searchType=image&num=7")
 
-    response = requests.get(url)
+    response = requests.get(url, timeout=5)
 
     if response.status_code in success_response_status_code_list:
         response_data = response.json()
         extract_data_from_cse_response(response_data, data)
         return
-    else:
-        return get_data_from_google_api(data, call_count + 1)
 
 
 def extract_data_from_cse_response(response, data):
