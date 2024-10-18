@@ -95,7 +95,7 @@ def get_responce():
     app.logger.info("total time")
     app.logger.info(after - before)
 
-    return results
+    return [results]
 
 
 def filter_images(data):
