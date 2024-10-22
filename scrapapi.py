@@ -103,7 +103,7 @@ def filter_images(data):
     modified_images = []
 
     for image_url in data['images']:
-        if re.search(pattern, image_url, re.IGNORECASE):
+        if image_url and re.search(pattern, image_url, re.IGNORECASE):
             modified_images.append(image_url)
 
     data['images'] = modified_images
