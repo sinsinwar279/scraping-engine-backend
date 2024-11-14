@@ -99,14 +99,21 @@ def get_responce():
 
 
 def filter_images(data):
-    pattern = r'\.(jpg|png|jpeg|jfif|pjpeg|pjp|svg|gif|webp)'
-    modified_images = []
+    brand_pattern = re.escape(data["brand_name"])
+    # Regex to match any of the specified brand names or image file extensions
+    brand_regex = rf'{brand_pattern}'
+    extension_regex = r'\.(jpg|png|jpeg|jfif|pjpeg|pjp|svg|gif|webp)(\b|$|\?|[&#])'
+    images_with_brand = []
+    images_without_brand = []
 
     for image_url in data['images']:
-        if image_url and re.search(pattern, image_url, re.IGNORECASE):
-            modified_images.append(image_url)
+        if re.search(brand_regex, image_url, re.IGNORECASE):
+            images_with_brand.append(image_url)
+        elif re.search(extension_regex, image_url, re.IGNORECASE):
+            images_without_brand.append(image_url)
 
-    data['images'] = modified_images
+    # Prioritize images with the brand name in their URL by appending them first
+    data['images'] = images_with_brand + images_without_brand
 
 
 def sanitize_url(url):
@@ -389,7 +396,7 @@ def get_data_from_google_api(data):
 
     search_string = data['title']
     if data['brand_name']:
-        search_string = search_string + " " + data['brand_name']
+        search_string = search_string + " from " + data['brand_name']
 
     url = (f"https://www.googleapis.com/customsearch/v1?cx={cse_id}&key={api_key}&q={search_string}"
            f"&searchType=image&num=7")
