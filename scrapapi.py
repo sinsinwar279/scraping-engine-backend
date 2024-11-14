@@ -178,7 +178,8 @@ def get_brand_name(url):
 
 
 def get_is_title_source_url(brand_name):
-    if is_wsi_brand(brand_name) or brand_name == 'etsy' or brand_name == 'wayfair':
+    if is_wsi_brand(brand_name) or brand_name == 'etsy' or brand_name == 'wayfair' or brand_name == 'crateandbarrel'\
+            or brand_name == 'anthropologie':
         return True
     return False
 
@@ -218,6 +219,25 @@ def get_wayfair_product_title_from_url(url):
     else:
         return None
 
+def get_crateandbarrel_product_from_url(url):
+    match = re.search(r'\.com\/([^\/]+)', url)
+    if match:
+        product_title = match.group(1).replace('-', ' ')
+        return product_title
+    else:
+        return None
+
+def get_anthropologie_product_from_url(url):
+    match = re.search(r'/shop/([^\/]+)', url)
+    if match:
+        match = re.search(r'/shop/([^\/?]+)', url)
+        if match:
+            # Replace hyphens with spaces in the extracted product title
+            product_title = match.group(1).replace('-', ' ')
+            return product_title
+    else:
+        return None
+
 def get_title_from_url(url, brand_name):
     if is_wsi_brand(brand_name):
         return get_wsi_product_title_from_url(url)
@@ -225,6 +245,10 @@ def get_title_from_url(url, brand_name):
         return get_etsy_product_title_from_url(url)
     elif brand_name == 'wayfair':
         return get_wayfair_product_title_from_url(url)
+    elif brand_name == 'crateandbarrel':
+        return get_crateandbarrel_product_from_url(url)
+    elif brand_name == 'anthropologie':
+        return get_anthropologie_product_from_url(url)
 
     return None
 
