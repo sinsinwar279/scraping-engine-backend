@@ -99,7 +99,7 @@ def get_responce():
 
 
 def filter_images(data):
-    brand_pattern = re.escape(data["brand_name"])
+    brand_pattern = re.escape(data["brand_name"]) if data["brand_name"] else None
     # Regex to match any of the specified brand names or image file extensions
     brand_regex = rf'{brand_pattern}'
     extension_regex = r'\.(jpg|png|jpeg|jfif|pjpeg|pjp|svg|gif|webp)(\b|$|\?|[&#])'
@@ -107,7 +107,7 @@ def filter_images(data):
     images_without_brand = []
 
     for image_url in data['images']:
-        if re.search(brand_regex, image_url, re.IGNORECASE):
+        if brand_pattern and re.search(brand_regex, image_url, re.IGNORECASE):
             images_with_brand.append(image_url)
         elif re.search(extension_regex, image_url, re.IGNORECASE):
             images_without_brand.append(image_url)
@@ -176,7 +176,11 @@ def is_wsi_brand(brand_name):
 
 def get_brand_name(url):
     pattern = r'www\.([^.]+)\.'
-    match = re.search(pattern, url)
+    try:
+        match = re.search(pattern, url)
+    except Exception as e:
+        print("error in get_brand_name : ", e)
+        return None
 
     if match:
         return match.group(1)
