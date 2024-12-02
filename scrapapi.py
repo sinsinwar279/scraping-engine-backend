@@ -319,7 +319,7 @@ def get_title_from_meta_data(data):
     before = time.time()
     html_response = get_html_response(data["url"])
     after = time.time()
-    print(f"Time taken in get_html_response {after - before}")
+    app.logger.info(f"Time taken in get_html_response {after - before}")
     if not html_response:
         return None
 
