@@ -395,9 +395,9 @@ def fetch_data(data):
 
     product_title = None
     if not is_title_source_url:
-        before = time.time()
+        before1 = time.time()
         product_title = get_title_from_meta_data(data)
-        app.logger.info(f"Time taken in get_title_from_meta_data : {time.time() - before}")
+        app.logger.info(f"Time taken in get_title_from_meta_data : {time.time() - before1}")
         data["brand_name"] = get_brand_name(data.get("url"))
 
     if is_title_source_url or not product_title:
