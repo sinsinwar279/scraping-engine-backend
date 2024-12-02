@@ -278,7 +278,7 @@ def get_html_response(url):
         else:
             app.logger.info(f"Received status code {response.status_code}, retrying...")
 
-    except requests.exceptions.RequestException as req_err:
+    except Exception as req_err:
         app.logger.info(f"Request error: {req_err}")
 
     return None
@@ -379,17 +379,21 @@ def fetch_data(data):
     product_title = None
     if not is_title_source_url:
         product_title = get_title_from_meta_data(data)
-        data["brand_name"] = get_brand_name(data["url"])
+        data["brand_name"] = get_brand_name(data.get("url"))
 
     if is_title_source_url or not product_title:
+        before = time.time()
         product_title = get_title_from_url(data["url"], data["brand_name"])
+        app.logger.info(f"Time taken in get_title_from_url : {time.time() - before}")
 
     if not product_title:
         return
 
     data['title'] = sanitize_product_title(product_title, data["brand_name"])
 
+    before = time.time()
     get_data_from_google_api(data)
+    print(f"Time taken in get_data_from_google_api : {time.time() - before}")
 
 
 def get_data_from_google_api(data):
