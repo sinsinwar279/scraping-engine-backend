@@ -393,7 +393,7 @@ def fetch_data(data):
 
     before = time.time()
     get_data_from_google_api(data)
-    print(f"Time taken in get_data_from_google_api : {time.time() - before}")
+    app.logger.info(f"Time taken in get_data_from_google_api : {time.time() - before}")
 
 
 def get_data_from_google_api(data):
