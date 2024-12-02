@@ -139,11 +139,17 @@ def get_response(obj):
 
     data["url"] = sanitize_url(data["url"])
 
+    before = time.time()
     fetch_data(data)
+    app.logger.info(f"Time taken in fetch_data : {time.time() - before}")
 
+    before = time.time()
     filter_images(data)
+    app.logger.info(f"Time taken in filter_images : {time.time() - before}")
 
+    before = time.time()
     data['title'] = title_case_product_title(data["title"])
+    app.logger.info(f"Time taken in title_case_product_title : {time.time() - before}")
 
     return {
         'url': data["url"],
@@ -389,7 +395,9 @@ def fetch_data(data):
     if not product_title:
         return
 
+    before = time.time()
     data['title'] = sanitize_product_title(product_title, data["brand_name"])
+    app.logger.info(f"Time taken in sanitize_product_title : {time.time() - before}")
 
     before = time.time()
     get_data_from_google_api(data)
