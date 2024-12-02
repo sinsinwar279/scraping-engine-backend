@@ -293,9 +293,15 @@ def get_html_response(url):
 def get_title_update_images_from_meta_tags(html_response, data):
     html_content = html_response.text
 
+    before = time.time()
     soup = BeautifulSoup(html_content, 'html.parser')
+    app.logger.info(f"Time taken in BeautifulSoup {time.time() - before}")
     meta_tags = soup.find_all('meta')
+    cnt = 0
+
+    before = time.time()
     for meta_tag in meta_tags:
+        cnt += 1
         for attr_value in meta_tag.attrs.values():
             if isinstance(attr_value, str) and 'og:' in attr_value:
                 # app.logger.info(attr_value)
@@ -317,6 +323,8 @@ def get_title_update_images_from_meta_tags(html_response, data):
 
     if data['title'] == '':
         data['title'] = soup.title.string if soup.title else ''
+
+    app.logger.info(f"Time taken in meta tags {time.time() - before}, \n Meta tags count : {cnt}")
 
     return data['title']
 
