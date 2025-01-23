@@ -257,7 +257,7 @@ def get_brand_name(url):
 
 def get_is_title_source_url(brand_name):
     if is_wsi_brand(brand_name) or brand_name == 'etsy' or brand_name == 'wayfair' or brand_name == 'crateandbarrel' \
-            or brand_name == 'anthropologie':
+            or brand_name == 'anthropologie' or brand_name == 'lumens':
         return True
     return False
 
@@ -352,9 +352,29 @@ def get_title_from_url(url, brand_name):
         return get_crateandbarrel_product_from_url(url)
     elif brand_name == 'anthropologie':
         return get_anthropologie_product_from_url(url)
+    elif brand_name == 'lumens':
+        return get_lumens_product_title_from_url(url)
 
     return None
 
+
+def get_lumens_product_title_from_url(url):
+    # Regex pattern to match the title after 'lumens.com/'
+    pattern = r'lumens\.com/([^/]+)-by-'
+
+    # Search for the pattern in the URL
+    match = re.search(pattern, url)
+
+    if match:
+        # Extract the title part
+        title_with_hyphens = match.group(1)
+
+        # Remove hyphens from the title
+        title = title_with_hyphens.replace('-', ' ')
+
+        return title
+    else:
+        return None
 
 def get_wsi_product_title_from_url(url):
     arr = url.split('/')
