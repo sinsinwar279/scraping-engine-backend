@@ -194,9 +194,9 @@ def fetch_data(data):
     data['title'] = sanitize_product_title(product_title, data["brand_name"])
     logger.info(f"Time taken in sanitize_product_title : {time.time() - before}")
 
-    before = time.time()
-    get_data_from_google_api(data)
-    logger.info(f"Time taken in get_data_from_google_api : {time.time() - before}")
+    # before = time.time()
+    # get_data_from_google_api(data)
+    # logger.info(f"Time taken in get_data_from_google_api : {time.time() - before}")
 
 
 def sanitize_product_title_amazon(product_title):
@@ -353,6 +353,7 @@ def get_title_from_url(url, brand_name):
     elif brand_name == 'anthropologie':
         return get_anthropologie_product_from_url(url)
     elif brand_name == 'lumens':
+        logger.info("lumens")
         return get_lumens_product_title_from_url(url)
 
     return None
