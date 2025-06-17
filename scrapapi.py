@@ -161,8 +161,8 @@ def filter_images(data):
 def sanitize_url(url):
     if not re.match(r'^https?://', url):
         url = 'https://' + url
-    sanitized_url = re.sub(r'^(https?://)(?!www\.)', r'\1www.', url)
-    return sanitized_url
+
+    return url
 
 
 def fetch_data(data):
